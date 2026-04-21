@@ -1,59 +1,62 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Register get_embedding UC Function
+# MAGIC # Chemical Fingerprint Setup Notes
 # MAGIC
-# MAGIC Creates the `get_embedding` UC function in `sean_zhang_catalog.gsk_india_hls`
-# MAGIC that computes ECFP4 molecular fingerprints from SMILES strings.
+# MAGIC The `get_embedding` tool computes ECFP4 molecular fingerprints using RDKit.
 # MAGIC
-# MAGIC This function is callable by the agent via MCP (as a UC function tool) and also
-# MAGIC directly via SQL: `SELECT sean_zhang_catalog.gsk_india_hls.get_embedding('CCO')`
+# MAGIC **Important**: RDKit is NOT available in the UC Python UDF sandbox, so `get_embedding`
+# MAGIC runs as a local `@tool` in the agent process (see `agent_server/tools_hls.py`)
+# MAGIC rather than as a UC function.
+# MAGIC
+# MAGIC This notebook verifies the fingerprint computation works on a cluster with RDKit installed.
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE OR REPLACE FUNCTION sean_zhang_catalog.gsk_india_hls.get_embedding(smiles STRING)
-# MAGIC RETURNS STRING
-# MAGIC LANGUAGE PYTHON
-# MAGIC COMMENT 'Compute ECFP4 molecular fingerprint as a 1024-char bitstring from a SMILES string. Uses Morgan fingerprints (radius=2, 1024 bits) via RDKit.'
-# MAGIC AS $$
-# MAGIC from rdkit.Chem import MolFromSmiles, AllChem
-# MAGIC fpgen = AllChem.GetMorganGenerator(radius=2, fpSize=1024)
-# MAGIC mol = MolFromSmiles(smiles)
-# MAGIC if mol is None:
-# MAGIC     return None
-# MAGIC fp = fpgen.GetFingerprintAsNumPy(mol)
-# MAGIC return ''.join(str(int(x)) for x in fp)
-# MAGIC $$
+# MAGIC %pip install rdkit
+# MAGIC %restart_python
+
+# COMMAND ----------
+
+from rdkit.Chem import AllChem, MolFromSmiles
+import numpy as np
+
+fpgen = AllChem.GetMorganGenerator(radius=2, fpSize=1024)
+
+def get_embedding(smiles: str) -> str:
+    mol = MolFromSmiles(smiles)
+    if mol is None:
+        return None
+    fp = fpgen.GetFingerprintAsNumPy(mol)
+    return "".join(str(int(x)) for x in fp)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Verify
+# MAGIC ## Test Fingerprints
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC -- Test with aspirin SMILES
-# MAGIC SELECT sean_zhang_catalog.gsk_india_hls.get_embedding('CC(=O)Oc1ccccc1C(=O)O') AS aspirin_ecfp4
+test_molecules = {
+    "aspirin": "CC(=O)Oc1ccccc1C(=O)O",
+    "caffeine": "Cn1c(=O)c2c(ncn2C)n(C)c1=O",
+    "ibuprofen": "CC(C)Cc1ccc(cc1)C(C)C(=O)O",
+    "ethanol": "CCO",
+}
 
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Test with caffeine
-# MAGIC SELECT sean_zhang_catalog.gsk_india_hls.get_embedding('Cn1c(=O)c2c(ncn2C)n(C)c1=O') AS caffeine_ecfp4
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC -- Verify length is 1024
-# MAGIC SELECT LENGTH(sean_zhang_catalog.gsk_india_hls.get_embedding('CCO')) AS bitstring_length
+for name, smiles in test_molecules.items():
+    fp = get_embedding(smiles)
+    ones = fp.count("1") if fp else 0
+    print(f"{name:12s}  SMILES={smiles:45s}  len={len(fp)}  ones={ones}")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Function Metadata
+# MAGIC ## Verify Fingerprint Properties
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC DESCRIBE FUNCTION EXTENDED sean_zhang_catalog.gsk_india_hls.get_embedding
+fp_aspirin = get_embedding("CC(=O)Oc1ccccc1C(=O)O")
+assert len(fp_aspirin) == 1024, f"Expected 1024, got {len(fp_aspirin)}"
+assert all(c in "01" for c in fp_aspirin), "Fingerprint should be binary"
+print(f"Aspirin ECFP4: {fp_aspirin[:80]}... ({fp_aspirin.count('1')} bits set)")
+print("All checks passed.")

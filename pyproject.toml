@@ -20,6 +20,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "opentelemetry-exporter-otlp-proto-grpc>=1.25.0",
     "databricks-vectorsearch",
+    "rdkit",
 ]
 
 [build-system]
