@@ -6,102 +6,102 @@
 # MAGIC -- WARNING: This will delete all data permanently!
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE CATALOG hls_data_discovery;
+# MAGIC USE CATALOG sean_zhang_catalog;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - CLINICAL RESEARCH SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.clinical_research.adverse_events;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.clinical_research.real_world_evidence;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.clinical_research.genomics_datasets;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.clinical_research.clinical_endpoints;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.clinical_research.patient_cohorts;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.clinical_research.clinical_trials;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_clinical_research.adverse_events;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_clinical_research.real_world_evidence;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_clinical_research.genomics_datasets;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_clinical_research.clinical_endpoints;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_clinical_research.patient_cohorts;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_clinical_research.clinical_trials;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - REGULATORY COMPLIANCE SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.regulatory_compliance.pharmacovigilance_reports;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.regulatory_compliance.retention_schedules;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.regulatory_compliance.audit_trail_logs;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.regulatory_compliance.gxp_validated_systems;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.regulatory_compliance.regulatory_submissions;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_regulatory_compliance.pharmacovigilance_reports;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_regulatory_compliance.retention_schedules;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_regulatory_compliance.audit_trail_logs;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_regulatory_compliance.gxp_validated_systems;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_regulatory_compliance.regulatory_submissions;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - PATIENT PRIVACY SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.patient_privacy.special_category_data;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.patient_privacy.anonymization_metadata;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.patient_privacy.data_subject_requests;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.patient_privacy.consent_records;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_patient_privacy.special_category_data;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_patient_privacy.anonymization_metadata;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_patient_privacy.data_subject_requests;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_patient_privacy.consent_records;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - MANUFACTURING OPERATIONS SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.manufacturing_ops.process_deviations;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.manufacturing_ops.supply_chain_inventory;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.manufacturing_ops.manufacturing_sites;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.manufacturing_ops.quality_control_results;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.manufacturing_ops.batch_genealogy;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_manufacturing_ops.process_deviations;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_manufacturing_ops.supply_chain_inventory;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_manufacturing_ops.manufacturing_sites;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_manufacturing_ops.quality_control_results;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_manufacturing_ops.batch_genealogy;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - COMMERCIAL ANALYTICS SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.commercial_analytics.competitive_intelligence;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.commercial_analytics.hcp_engagement;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.commercial_analytics.market_access_contracts;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.commercial_analytics.prescription_trends;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_commercial_analytics.competitive_intelligence;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_commercial_analytics.hcp_engagement;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_commercial_analytics.market_access_contracts;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_commercial_analytics.prescription_trends;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - INFRASTRUCTURE SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.infrastructure.integration_interfaces;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.infrastructure.data_quality_metrics;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.infrastructure.data_pipelines;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.infrastructure.source_systems_catalog;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_infrastructure.integration_interfaces;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_infrastructure.data_quality_metrics;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_infrastructure.data_pipelines;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_infrastructure.source_systems_catalog;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - GOVERNANCE SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.governance.governance_policies;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.governance.data_classification;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.governance.data_ownership_registry;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_governance.governance_policies;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_governance.data_classification;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_governance.data_ownership_registry;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - AI/ML ANALYTICS SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.ai_ml_analytics.ml_training_datasets;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.ai_ml_analytics.feature_stores;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.ai_ml_analytics.ml_models_registry;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_ai_ml_analytics.ml_training_datasets;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_ai_ml_analytics.feature_stores;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_ai_ml_analytics.ml_models_registry;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP TABLES - REFERENCE DATA SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.reference_data.controlled_vocabularies;
-# MAGIC DROP TABLE IF EXISTS hls_data_discovery.reference_data.therapeutic_areas;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_reference_data.controlled_vocabularies;
+# MAGIC DROP TABLE IF EXISTS sean_zhang_catalog.hls_reference_data.therapeutic_areas;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- DROP SCHEMAS
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.clinical_research CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.regulatory_compliance CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.patient_privacy CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.manufacturing_ops CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.commercial_analytics CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.infrastructure CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.governance CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.ai_ml_analytics CASCADE;
-# MAGIC DROP SCHEMA IF EXISTS hls_data_discovery.reference_data CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_clinical_research CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_regulatory_compliance CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_patient_privacy CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_manufacturing_ops CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_commercial_analytics CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_infrastructure CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_governance CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_ai_ml_analytics CASCADE;
+# MAGIC DROP SCHEMA IF EXISTS sean_zhang_catalog.hls_reference_data CASCADE;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- OPTIONAL: DROP CATALOG (Uncomment if you want to drop the entire catalog)
@@ -128,71 +128,71 @@
 # MAGIC -- ============================================================================
 # MAGIC -- Catalog: HLS_Data_Discovery
 # MAGIC -- ============================================================================
-# MAGIC CREATE CATALOG IF NOT EXISTS hls_data_discovery;
+# MAGIC -- Using existing catalog sean_zhang_catalog (no CREATE needed on FEVM)
 # MAGIC
 # MAGIC
 # MAGIC -- Use the catalog
-# MAGIC USE CATALOG hls_data_discovery;
+# MAGIC USE CATALOG sean_zhang_catalog;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 1: Clinical Research
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS clinical_research
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_clinical_research
 # MAGIC COMMENT 'Clinical trial and R&D research data assets';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 2: Regulatory Compliance
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS regulatory_compliance
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_regulatory_compliance
 # MAGIC COMMENT 'Regulatory submissions, compliance, and pharmacovigilance data';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 3: Patient Privacy
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS patient_privacy
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_patient_privacy
 # MAGIC COMMENT 'Patient consent, privacy controls, and data subject rights management';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 4: Manufacturing Operations
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS manufacturing_ops
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_manufacturing_ops
 # MAGIC COMMENT 'Manufacturing, quality control, and supply chain data';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 5: Commercial Analytics
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS commercial_analytics
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_commercial_analytics
 # MAGIC COMMENT 'Commercial, market access, and competitive intelligence data';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 6: Infrastructure
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS infrastructure
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_infrastructure
 # MAGIC COMMENT 'Technical systems, data pipelines, and integration metadata';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 7: Governance
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS governance
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_governance
 # MAGIC COMMENT 'Data ownership, stewardship, and governance policies';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 8: AI/ML Analytics
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS ai_ml_analytics
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_ai_ml_analytics
 # MAGIC COMMENT 'Machine learning models, feature stores, and training datasets';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- Schema 9: Reference Data
 # MAGIC -- ============================================================================
-# MAGIC CREATE SCHEMA IF NOT EXISTS reference_data
+# MAGIC CREATE SCHEMA IF NOT EXISTS hls_reference_data
 # MAGIC COMMENT 'Master data and controlled vocabularies';
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- PART 2: TABLE CREATION - CLINICAL RESEARCH SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA clinical_research;
+# MAGIC USE SCHEMA hls_clinical_research;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS clinical_trials (
 # MAGIC     trial_id STRING NOT NULL,
@@ -323,7 +323,7 @@
 # MAGIC -- PART 3: TABLE CREATION - REGULATORY COMPLIANCE SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA regulatory_compliance;
+# MAGIC USE SCHEMA hls_regulatory_compliance;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS regulatory_submissions (
 # MAGIC     submission_id STRING NOT NULL,
@@ -419,7 +419,7 @@
 # MAGIC -- PART 4: TABLE CREATION - PATIENT PRIVACY SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA patient_privacy;
+# MAGIC USE SCHEMA hls_patient_privacy;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS consent_records (
 # MAGIC     consent_id STRING NOT NULL,
@@ -496,7 +496,7 @@
 # MAGIC -- PART 5: TABLE CREATION - MANUFACTURING OPERATIONS SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA manufacturing_ops;
+# MAGIC USE SCHEMA hls_manufacturing_ops;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS batch_genealogy (
 # MAGIC     batch_id STRING NOT NULL,
@@ -597,7 +597,7 @@
 # MAGIC -- PART 6: TABLE CREATION - COMMERCIAL ANALYTICS SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA commercial_analytics;
+# MAGIC USE SCHEMA hls_commercial_analytics;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS prescription_trends (
 # MAGIC     trend_id STRING NOT NULL,
@@ -678,7 +678,7 @@
 # MAGIC -- PART 7: TABLE CREATION - INFRASTRUCTURE SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA infrastructure;
+# MAGIC USE SCHEMA hls_infrastructure;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS source_systems_catalog (
 # MAGIC     system_id STRING NOT NULL,
@@ -759,7 +759,7 @@
 # MAGIC -- PART 8: TABLE CREATION - GOVERNANCE SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA governance;
+# MAGIC USE SCHEMA hls_governance;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS data_ownership_registry (
 # MAGIC     ownership_id STRING NOT NULL,
@@ -819,7 +819,7 @@
 # MAGIC -- PART 9: TABLE CREATION - AI/ML ANALYTICS SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA ai_ml_analytics;
+# MAGIC USE SCHEMA hls_ai_ml_analytics;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS ml_models_registry (
 # MAGIC     model_id STRING NOT NULL,
@@ -883,7 +883,7 @@
 # MAGIC -- PART 10: TABLE CREATION - REFERENCE DATA SCHEMA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA reference_data;
+# MAGIC USE SCHEMA hls_reference_data;
 # MAGIC
 # MAGIC CREATE TABLE IF NOT EXISTS therapeutic_areas (
 # MAGIC     ta_id STRING NOT NULL,
@@ -922,13 +922,13 @@
 # MAGIC -- DATA GENERATION SCRIPTS - GSK ENTERPRISE CATALOG
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE CATALOG hls_data_discovery;
+# MAGIC USE CATALOG sean_zhang_catalog;
 # MAGIC
 # MAGIC -- ============================================================================
 # MAGIC -- REFERENCE DATA - POPULATE FIRST (Dependencies)
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA reference_data;
+# MAGIC USE SCHEMA hls_reference_data;
 # MAGIC
 # MAGIC -- Insert Therapeutic Areas
 # MAGIC INSERT INTO reference_data.therapeutic_areas (ta_id, ta_name, ta_code, ta_description, parent_ta_id, therapeutic_portfolio, active, created_date, last_updated) VALUES
@@ -956,7 +956,7 @@
 # MAGIC -- CLINICAL RESEARCH DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA clinical_research;
+# MAGIC USE SCHEMA hls_clinical_research;
 # MAGIC
 # MAGIC -- Insert Clinical Trials
 # MAGIC INSERT INTO clinical_trials VALUES
@@ -1012,7 +1012,7 @@
 # MAGIC -- REGULATORY COMPLIANCE DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA regulatory_compliance;
+# MAGIC USE SCHEMA hls_regulatory_compliance;
 # MAGIC
 # MAGIC -- Insert Regulatory Submissions
 # MAGIC INSERT INTO regulatory_submissions VALUES
@@ -1057,7 +1057,7 @@
 # MAGIC -- PATIENT PRIVACY DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA patient_privacy;
+# MAGIC USE SCHEMA hls_patient_privacy;
 # MAGIC
 # MAGIC -- Insert Consent Records
 # MAGIC INSERT INTO consent_records VALUES
@@ -1090,7 +1090,7 @@
 # MAGIC -- MANUFACTURING OPERATIONS DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA manufacturing_ops;
+# MAGIC USE SCHEMA hls_manufacturing_ops;
 # MAGIC
 # MAGIC -- Insert Manufacturing Sites
 # MAGIC INSERT INTO manufacturing_sites VALUES
@@ -1130,7 +1130,7 @@
 # MAGIC -- COMMERCIAL ANALYTICS DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA commercial_analytics;
+# MAGIC USE SCHEMA hls_commercial_analytics;
 # MAGIC
 # MAGIC -- Insert Prescription Trends
 # MAGIC INSERT INTO prescription_trends VALUES
@@ -1161,7 +1161,7 @@
 # MAGIC -- INFRASTRUCTURE DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA infrastructure;
+# MAGIC USE SCHEMA hls_infrastructure;
 # MAGIC
 # MAGIC -- Insert Source Systems Catalog
 # MAGIC INSERT INTO source_systems_catalog VALUES
@@ -1196,7 +1196,7 @@
 # MAGIC -- GOVERNANCE DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA governance;
+# MAGIC USE SCHEMA hls_governance;
 # MAGIC
 # MAGIC -- Insert Data Ownership Registry
 # MAGIC INSERT INTO data_ownership_registry VALUES
@@ -1224,7 +1224,7 @@
 # MAGIC -- AI/ML ANALYTICS DATA
 # MAGIC -- ============================================================================
 # MAGIC
-# MAGIC USE SCHEMA ai_ml_analytics;
+# MAGIC USE SCHEMA hls_ai_ml_analytics;
 # MAGIC
 # MAGIC -- Insert ML Models Registry
 # MAGIC INSERT INTO ml_models_registry VALUES

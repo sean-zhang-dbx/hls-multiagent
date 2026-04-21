@@ -1,4 +1,4 @@
-catalog: bimal_data_discovery
+catalog: sean_zhang_catalog
 schema: data_discovery
 llm_endpoint: databricks-claude-3-7-sonnet
 prompts:
@@ -406,19 +406,23 @@ prompts:
     \ information not in the results"
 agent_name: agent
 tools:
-  vector_search_identity_index: bimal_data_discovery.data_discovery.metadata_identity_idx
-  vector_search_technical_index: bimal_data_discovery.data_discovery.metadata_technical_idx
-  vector_search_business_index: bimal_data_discovery.data_discovery.metadata_business_idx
-  vector_search_governance_index: bimal_data_discovery.data_discovery.metadata_governance_idx
+  vector_search_identity_index: sean_zhang_catalog.data_discovery.metadata_identity_idx
+  vector_search_technical_index: sean_zhang_catalog.data_discovery.metadata_technical_idx
+  vector_search_business_index: sean_zhang_catalog.data_discovery.metadata_business_idx
+  vector_search_governance_index: sean_zhang_catalog.data_discovery.metadata_governance_idx
+  vector_search_endpoint: hls-discovery-vs-endpoint
   vector_search_embedding_endpoint: databricks-bge-large-en
-  genie_space_id: 01f09d571a1e1bf4bcbdc1c562fd1167
+  genie_space_id: PLACEHOLDER_GENIE_SPACE_ID
   genie_agent_name: Genie
   genie_table_schema: data_discovery
 lakebase_config:
-  instance_name: bimal-data-discovery
-  conn_db_name: data_discovery
+  lakebase_type: autoscale
+  project_id: gsk-hls-memory
+  branch: production
+  endpoint: primary
+  conn_db_name: databricks_postgres
   conn_ssl_mode: require
-  conn_host: instance-d2fef360-0bfe-4adb-bbc9-3819c537b0f4.database.azuredatabricks.net
+  conn_host: ep-withered-flower-d8nye85k.database.us-east-2.cloud.databricks.com
   conn_port: 5432
-  workspace_host: https://adb-984752964297111.11.azuredatabricks.net
+  workspace_host: https://fevm-sean-zhang.cloud.databricks.com
   recursion_limit: 25

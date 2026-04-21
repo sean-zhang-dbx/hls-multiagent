@@ -87,7 +87,7 @@ genie_system_prompt = '''
 You are the Genie Agent, a specialized analytics agent with access to comprehensive Databricks usage, cost, monitoring, and consumption metrics. You provide data-driven insights about how the platform is being used, what it costs, and how resources are performing.
 
 AVAILABLE DATA SOURCES:
-You have access to six metric views in the yourcatalog.yourschema schema:
+You have access to six metric views in the sean_zhang_catalog.data_discovery schema:
 
 1. **cost_by_job_metric_view** - Job-level cost and DBU tracking
    - Dimensions: Workspace Name, Job ID, Job Name, Usage Date, Product Type, SKU Name
@@ -695,8 +695,8 @@ prompts_to_register = [
 import yaml
     
 yaml_data = {
-    "catalog": "your catalog",
-    "schema": "your schema",
+    "catalog": "sean_zhang_catalog",
+    "schema": "data_discovery",
     "llm_endpoint": "databricks-claude-3-7-sonnet",
     "prompts": {
         "planner_prompt": planner_prompt,
@@ -711,23 +711,26 @@ yaml_data = {
     },
     "agent_name": "agent",
     "tools" : {
-                "vector_search_identity_index":"yourcatalog.yourschema.metadata_identity_idx",
-                "vector_search_technical_index":"yourcatalog.yourschema.metadata_technical_idx",
-                "vector_search_business_index":"yourcatalog.yourschema.metadata_business_idx",
-                "vector_search_governance_index":"yourcatalog.yourschema.metadata_governance_idx",
+                "vector_search_identity_index":"sean_zhang_catalog.data_discovery.metadata_identity_idx",
+                "vector_search_technical_index":"sean_zhang_catalog.data_discovery.metadata_technical_idx",
+                "vector_search_business_index":"sean_zhang_catalog.data_discovery.metadata_business_idx",
+                "vector_search_governance_index":"sean_zhang_catalog.data_discovery.metadata_governance_idx",
                 "vector_search_embedding_endpoint":"databricks-bge-large-en",
-                "genie_space_id":"01f09d571a1e1bf4bcbdc1c562fd1167",
+                "genie_space_id":"PLACEHOLDER_GENIE_SPACE_ID",
                 "genie_agent_name" : "Genie",
                 "genie_table_schema": "data_discovery",
                 },
     "lakebase_config":{
-                "instance_name" : "your instance name"  ,
-                "conn_db_name":"your db name",
-                "conn_ssl_mode":"require",
-                "conn_host":"instance-XXXXX.database.azuredatabricks.net",
-                "conn_port":5432,
-                "workspace_host":"https://adb-XXXXXXXX.XX.azuredatabricks.net",
-                "recursion_limit":25,}
+                "lakebase_type": "autoscale",
+                "project_id": "gsk-hls-memory",
+                "branch": "production",
+                "endpoint": "primary",
+                "conn_db_name": "databricks_postgres",
+                "conn_ssl_mode": "require",
+                "conn_host": "ep-withered-flower-d8nye85k.database.us-east-2.cloud.databricks.com",
+                "conn_port": 5432,
+                "workspace_host": "https://fevm-sean-zhang.cloud.databricks.com",
+                "recursion_limit": 25,}
 }
 
 with open("config.yaml", "w") as f:
@@ -738,13 +741,16 @@ with open("config.yaml", "w") as f:
 
 from lb_state_manager import DatabricksStateManager
 lakebase_config= {
-                "instance_name" : "fastpgcache"  ,
-                "conn_db_name":"cache_db",
-                "conn_ssl_mode":"require",
-                "conn_host":"instance-89fafa88-c569-4bd5-aa88-02da118a919f.database.azuredatabricks.net",
-                "conn_port":5432,
-                "workspace_host":"https://adb-984752964297111.11.azuredatabricks.net",
-                "recursion_limit":25,}
+                "lakebase_type": "autoscale",
+                "project_id": "gsk-hls-memory",
+                "branch": "production",
+                "endpoint": "primary",
+                "conn_db_name": "databricks_postgres",
+                "conn_ssl_mode": "require",
+                "conn_host": "ep-withered-flower-d8nye85k.database.us-east-2.cloud.databricks.com",
+                "conn_port": 5432,
+                "workspace_host": "https://fevm-sean-zhang.cloud.databricks.com",
+                "recursion_limit": 25,}
 state_manager = DatabricksStateManager(lakebase_config=lakebase_config)
 
 # COMMAND ----------
@@ -2315,7 +2321,7 @@ resources = [
     DatabricksVectorSearchIndex(index_name=config['tools']['vector_search_business_index']),
     DatabricksVectorSearchIndex(index_name=config['tools']['vector_search_governance_index']),
     DatabricksGenieSpace(genie_space_id=config['tools']['genie_space_id']),
-    DatabricksLakebase(database_instance_name=config['lakebase_config']["instance_name"])
+    DatabricksLakebase(database_instance_name=config['lakebase_config']["project_id"])
 ]
 resources.extend(table_resources)
 
@@ -2474,7 +2480,7 @@ mlflow.set_registry_uri("databricks-uc")
 catalog = ""
 schema = ""
 model_name = ""
-UC_MODEL_NAME = f"yourcatalog.yourschema.supervisor_v_1_7"
+UC_MODEL_NAME = f"sean_zhang_catalog.data_discovery.hls_supervisor_v1_7"
 
 
 # register the model to UC
@@ -2514,7 +2520,7 @@ else:
 
 # DBTITLE 1,Deploy the Agent
 from databricks import agents
-deployment_info = agents.deploy(UC_MODEL_NAME, uc_registered_model_info.version, tags = {"endpointSource": "playground"}, endpoint_name="yourendpointname")
+deployment_info = agents.deploy(UC_MODEL_NAME, uc_registered_model_info.version, tags = {"endpointSource": "playground"}, endpoint_name="hls-discovery-agent")
 
 # COMMAND ----------
 
@@ -2611,7 +2617,7 @@ def warmup_endpoint(endpoint_name, token, workspace_url, interval=30):
 # Example usage:
 TOKEN = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
 WORKSPACE_URL = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().apply('browserHostName')
-warmup_endpoint(endpoint_name='yourendpointname', token=TOKEN, workspace_url=WORKSPACE_URL)
+warmup_endpoint(endpoint_name='hls-discovery-agent', token=TOKEN, workspace_url=WORKSPACE_URL)
 
 # COMMAND ----------
 
@@ -2741,7 +2747,7 @@ def main():
     # Configuration - replace with your actual values or use environment variables
     WORKSPACE_URL = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiUrl().get()
     TOKEN = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
-    ENDPOINT_NAME = os.getenv("ENDPOINT_NAME", "yourendpointname")
+    ENDPOINT_NAME = os.getenv("ENDPOINT_NAME", "hls-discovery-agent")
     
     if TOKEN == "your-token-here":
         print("Please set DATABRICKS_TOKEN environment variable or update the script")

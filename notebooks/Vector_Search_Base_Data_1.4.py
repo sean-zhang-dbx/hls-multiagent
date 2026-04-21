@@ -1,10 +1,10 @@
 # Databricks notebook source
 # MAGIC %sql
-# MAGIC create or replace view yourcatalog.data_discovery.table_schema_tags
+# MAGIC create or replace view sean_zhang_catalog.data_discovery.table_schema_tags
 # MAGIC as
-# MAGIC select * from yourcatalog.information_schema.table_tags
+# MAGIC select * from sean_zhang_catalog.information_schema.table_tags
 # MAGIC union all
-# MAGIC select catalog_name,schema_name, null as table_name, tag_name, tag_value from your_catalog.information_schema.schema_tags;
+# MAGIC select catalog_name,schema_name, null as table_name, tag_name, tag_value from sean_zhang_catalog.information_schema.schema_tags;
 # MAGIC
 # MAGIC
 
@@ -15,7 +15,7 @@
 # MAGIC -- DOMAIN 1: IDENTITY & OWNERSHIP
 # MAGIC -- Focus: WHO owns, manages, or is responsible for data products
 # MAGIC
-# MAGIC CREATE OR REPLACE TABLE your_catalog.yourschema.metadata_identity_source
+# MAGIC CREATE OR REPLACE TABLE sean_zhang_catalog.data_discovery.metadata_identity_source
 # MAGIC TBLPROPERTIES (delta.enableChangeDataFeed = true)
 # MAGIC AS
 # MAGIC WITH base AS (
@@ -34,7 +34,7 @@
 # MAGIC     max(CASE WHEN tag_name = 'business_data_product_title' THEN tag_value END) AS data_product_title,
 # MAGIC     max(CASE WHEN tag_name = 'business_project_name' THEN tag_value END) AS project_name,
 # MAGIC     count(DISTINCT table_name) AS table_count
-# MAGIC   FROM your_catalog.yourschema.table_schema_tags
+# MAGIC   FROM sean_zhang_catalog.data_discovery.table_schema_tags
 # MAGIC   GROUP BY schema_name
 # MAGIC )
 # MAGIC SELECT concat(
@@ -108,7 +108,7 @@
 # MAGIC %sql
 # MAGIC -- DOMAIN 2: BUSINESS CONTEXT & STRUCTURE  
 # MAGIC -- Focus: WHAT projects, domains, business context, organizational structure
-# MAGIC CREATE OR REPLACE TABLE your_catalog.yourschema.metadata_business_source
+# MAGIC CREATE OR REPLACE TABLE sean_zhang_catalog.data_discovery.metadata_business_source
 # MAGIC TBLPROPERTIES (delta.enableChangeDataFeed = true)
 # MAGIC AS
 # MAGIC WITH base AS (
@@ -131,7 +131,7 @@
 # MAGIC     max(CASE WHEN tag_name = 'business_domain_area' THEN tag_value END) AS domain_area,
 # MAGIC     max(CASE WHEN tag_name = 'business_business_value' THEN tag_value END) AS business_value,
 # MAGIC     count(DISTINCT table_name) AS table_count
-# MAGIC   FROM your_catalog.yourschema.table_schema_tags
+# MAGIC   FROM sean_zhang_catalog.data_discovery.table_schema_tags
 # MAGIC   GROUP BY schema_name
 # MAGIC )
 # MAGIC SELECT concat(
@@ -213,7 +213,7 @@
 # MAGIC %sql
 # MAGIC -- DOMAIN 3: TECHNICAL ARCHITECTURE
 # MAGIC -- Focus: HOW data is structured, technical implementation, system details
-# MAGIC CREATE OR REPLACE TABLE bimal_data_discovery.data_discovery.metadata_technical_source
+# MAGIC CREATE OR REPLACE TABLE sean_zhang_catalog.data_discovery.metadata_technical_source
 # MAGIC TBLPROPERTIES (delta.enableChangeDataFeed = true)
 # MAGIC AS
 # MAGIC WITH base AS (
@@ -236,7 +236,7 @@
 # MAGIC     max(CASE WHEN tag_name = 'technical_clustering' THEN tag_value END) AS clustering,
 # MAGIC     max(CASE WHEN tag_name = 'business_data_product_title' THEN tag_value END) AS data_product_title,
 # MAGIC     count(DISTINCT table_name) AS actual_table_count
-# MAGIC   FROM bimal_data_discovery.data_discovery.table_schema_tags
+# MAGIC   FROM sean_zhang_catalog.data_discovery.table_schema_tags
 # MAGIC   GROUP BY schema_name
 # MAGIC )
 # MAGIC SELECT concat(
@@ -322,7 +322,7 @@
 # MAGIC -- DOMAIN 4: GOVERNANCE & COMPLIANCE
 # MAGIC -- Focus: Compliance, classifications, policies, data governance
 # MAGIC
-# MAGIC CREATE OR REPLACE TABLE your_catalog.yourschema.metadata_governance_source
+# MAGIC CREATE OR REPLACE TABLE sean_zhang_catalog.data_discovery.metadata_governance_source
 # MAGIC TBLPROPERTIES (delta.enableChangeDataFeed = true)
 # MAGIC AS
 # MAGIC WITH base AS (
@@ -349,7 +349,7 @@
 # MAGIC     max(CASE WHEN tag_name = 'identity_data_steward' THEN tag_value END) AS data_steward,
 # MAGIC     max(CASE WHEN tag_name = 'identity_steward_squad' THEN tag_value END) AS steward_squad,
 # MAGIC     count(DISTINCT table_name) AS table_count
-# MAGIC   FROM your_catalog.yourschema.table_schema_tags
+# MAGIC   FROM sean_zhang_catalog.data_discovery.table_schema_tags
 # MAGIC   GROUP BY schema_name
 # MAGIC )
 # MAGIC SELECT concat(
@@ -464,10 +464,10 @@
 from databricks.vector_search.client import VectorSearchClient
 
 vsc = VectorSearchClient()
-vsc.delete_index(index_name="your_catalog.yourschema.metadata_identity_idx")
-vsc.delete_index(index_name="your_catalog.yourschema.metadata_business_idx")
-vsc.delete_index(index_name="your_catalog.yourschema.metadata_technical_idx")
-vsc.delete_index(index_name="your_catalog.yourschema.metadata_governance_idx")
+vsc.delete_index(index_name="sean_zhang_catalog.data_discovery.metadata_identity_idx")
+vsc.delete_index(index_name="sean_zhang_catalog.data_discovery.metadata_business_idx")
+vsc.delete_index(index_name="sean_zhang_catalog.data_discovery.metadata_technical_idx")
+vsc.delete_index(index_name="sean_zhang_catalog.data_discovery.metadata_governance_idx")
 
 # COMMAND ----------
 
@@ -476,9 +476,9 @@ from databricks.vector_search.client import VectorSearchClient
 vsc = VectorSearchClient()
 
 index = vsc.create_delta_sync_index(
-    endpoint_name="one-env-shared-endpoint-1",
-    source_table_name="your_catalog.yourschema.metadata_identity_source",
-    index_name="your_catalog.yourschema.metadata_identity_idx",
+    endpoint_name="hls-discovery-vs-endpoint",
+    source_table_name="sean_zhang_catalog.data_discovery.metadata_identity_source",
+    index_name="sean_zhang_catalog.data_discovery.metadata_identity_idx",
     pipeline_type="TRIGGERED",
     primary_key="primary_key",
     embedding_source_column="document_text",
@@ -488,9 +488,9 @@ print(f"Index created: {index}")
 
 
 index = vsc.create_delta_sync_index(
-    endpoint_name="one-env-shared-endpoint-1",
-    source_table_name="your_catalog.yourschema.metadata_business_source",
-    index_name="your_catalog.yourschema.metadata_business_idx",
+    endpoint_name="hls-discovery-vs-endpoint",
+    source_table_name="sean_zhang_catalog.data_discovery.metadata_business_source",
+    index_name="sean_zhang_catalog.data_discovery.metadata_business_idx",
     pipeline_type="TRIGGERED",
     primary_key="primary_key",
     embedding_source_column="document_text",
@@ -500,9 +500,9 @@ print(f"Index created: {index}")
 
 
 index = vsc.create_delta_sync_index(
-    endpoint_name="one-env-shared-endpoint-1",
-    source_table_name="your_catalog.yourschema.metadata_technical_source",
-    index_name="your_catalog.yourschema.metadata_technical_idx",
+    endpoint_name="hls-discovery-vs-endpoint",
+    source_table_name="sean_zhang_catalog.data_discovery.metadata_technical_source",
+    index_name="sean_zhang_catalog.data_discovery.metadata_technical_idx",
     pipeline_type="TRIGGERED",
     primary_key="primary_key",
     embedding_source_column="document_text",
@@ -512,9 +512,9 @@ print(f"Index created: {index}")
 
 
 index = vsc.create_delta_sync_index(
-    endpoint_name="one-env-shared-endpoint-1",
-    source_table_name="your_catalog.yourschema.metadata_governance_source",
-    index_name="your_catalog.yourschema.metadata_governance_idx",
+    endpoint_name="hls-discovery-vs-endpoint",
+    source_table_name="sean_zhang_catalog.data_discovery.metadata_governance_source",
+    index_name="sean_zhang_catalog.data_discovery.metadata_governance_idx",
     pipeline_type="TRIGGERED",
     primary_key="primary_key",
     embedding_source_column="document_text",

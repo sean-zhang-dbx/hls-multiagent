@@ -30,31 +30,31 @@ from mlflow.types.responses import (
 logger = logging.getLogger(__name__)
 
 class CredentialConnection(psycopg.Connection):
-    """Custom connection class that generates fresh OAuth tokens with caching."""
+    """Custom connection class that generates fresh OAuth tokens with caching.
+    
+    Supports both Lakebase Provisioned (w.database) and Autoscaling (w.postgres).
+    Set lakebase_type to 'autoscale' or 'provisioned' on the class before use.
+    """
 
     workspace_client = None
     instance_name = None
+    endpoint_resource_name = None
+    lakebase_type = "autoscale"
 
-    # Cache attributes
     _cached_credential = None
     _cache_timestamp = None
-    _cache_duration = 3000  # 50 minutes in seconds (50 * 60)
+    _cache_duration = 3000  # 50 minutes
     _cache_lock = Lock()
-
 
     @classmethod
     def connect(cls, conninfo="", **kwargs):
         """Override connect to inject OAuth token with 50-minute caching"""
-        if cls.workspace_client is None or cls.instance_name is None:
-            raise ValueError(
-                "workspace_client and instance_name must be set on CredentialConnection class"
-            )
+        if cls.workspace_client is None:
+            raise ValueError("workspace_client must be set on CredentialConnection class")
 
-        # Get cached or fresh credential and append the new password to kwargs
         credential_token = cls._get_cached_credential()
         kwargs["password"] = credential_token
 
-        # Call the superclass's connect method with updated kwargs
         return super().connect(conninfo, **kwargs)
 
     @classmethod
@@ -63,7 +63,6 @@ class CredentialConnection(psycopg.Connection):
         with cls._cache_lock:
             current_time = time.time()
 
-            # Check if we have a valid cached credential
             if (
                 cls._cached_credential is not None
                 and cls._cache_timestamp is not None
@@ -71,12 +70,15 @@ class CredentialConnection(psycopg.Connection):
             ):
                 return cls._cached_credential
 
-            # Generate new credential
-            credential = cls.workspace_client.database.generate_database_credential(
-                request_id=str(uuid.uuid4()), instance_names=[cls.instance_name]
-            )
+            if cls.lakebase_type == "autoscale":
+                credential = cls.workspace_client.postgres.generate_database_credential(
+                    endpoint=cls.endpoint_resource_name
+                )
+            else:
+                credential = cls.workspace_client.database.generate_database_credential(
+                    request_id=str(uuid.uuid4()), instance_names=[cls.instance_name]
+                )
 
-            # Cache the new credential
             cls._cached_credential = credential.token
             cls._cache_timestamp = current_time
 
@@ -108,35 +110,41 @@ class DatabricksStateManager:
         """
         Initialize the state manager.
         
+        Supports both Lakebase Provisioned and Autoscaling.
+        
         Args:
             lakebase_config: Dictionary containing:
-                - instance_name: Lakebase instance name
-                - conn_host: Database host
-                - conn_db_name: Database name (default: 'databricks_postgres')
-                - conn_ssl_mode: SSL mode (default: 'require')
-                - client_id: Service Principal client ID (optional)
-                - client_secret: Service Principal client secret (optional)
-                - workspace_host: Databricks workspace URL (required if using client_id/secret)
+                For Autoscaling (lakebase_type='autoscale'):
+                    - project_id: Project name (e.g., 'gsk-hls-memory')
+                    - branch: Branch name (default: 'production')
+                    - endpoint: Endpoint name (default: 'primary')
+                For Provisioned (lakebase_type='provisioned'):
+                    - instance_name: Lakebase instance name
+                Common:
+                    - lakebase_type: 'autoscale' or 'provisioned' (default: 'autoscale')
+                    - conn_host: Database host (auto-resolved for autoscale if omitted)
+                    - conn_db_name: Database name (default: 'databricks_postgres')
+                    - conn_ssl_mode: SSL mode (default: 'require')
+                    - client_id/client_secret: Service Principal auth (optional)
+                    - workspace_host: Workspace URL (required for SP auth)
             workspace_client: Databricks workspace client (creates new if None)
             token_cache_minutes: How long to cache OAuth tokens
             connection_timeout: Connection timeout in seconds
         """
         self.lakebase_config = lakebase_config
         self.connection_timeout = connection_timeout
-        # Connection pool configuration
+        self.lakebase_type = lakebase_config.get("lakebase_type", "autoscale")
+
         self.pool_min_size = int(os.getenv("DB_POOL_MIN_SIZE", "1"))
         self.pool_max_size = int(os.getenv("DB_POOL_MAX_SIZE", "10"))
         self.pool_timeout = float(os.getenv("DB_POOL_TIMEOUT", "30.0"))
 
-        # Initialize workspace client based on provided config
         if workspace_client:
             self.workspace_client = workspace_client
         elif lakebase_config.get("client_id") and lakebase_config.get("client_secret"):
-            # Use client ID and secret for authentication
             workspace_host = lakebase_config.get("workspace_host")
             if not workspace_host:
                 raise ValueError("workspace_host is required when using client_id/client_secret authentication")
-            
             self.workspace_client = WorkspaceClient(
                 host=workspace_host,
                 client_id=lakebase_config["client_id"],
@@ -144,38 +152,48 @@ class DatabricksStateManager:
             )
             logger.info("WorkspaceClient initialized with client_id/client_secret authentication")
         else:
-            # Use default authentication (environment variables, etc.)
             self.workspace_client = WorkspaceClient()
             logger.info("WorkspaceClient initialized with default authentication")
         
-        # Token caching
         self._cache_duration = token_cache_minutes * 60
         self._cached_credential = None
         self._cache_timestamp = None
         self._cache_lock = Lock()
         
-        # Standard PostgresSaver table names (not configurable in current version)
         self.standard_tables = {
             "checkpoints": "checkpoints",
             "checkpoint_blobs": "checkpoint_blobs", 
             "checkpoint_writes": "checkpoint_writes"
         }
         
-        # Connection parameters
         self.username = self._get_username()
-        self.host = self.lakebase_config["conn_host"]
         self.database = self.lakebase_config.get("conn_db_name", "databricks_postgres")
         self.ssl_mode = self.lakebase_config.get("conn_ssl_mode", "require")
+
+        if self.lakebase_type == "autoscale":
+            project_id = lakebase_config["project_id"]
+            branch = lakebase_config.get("branch", "production")
+            endpoint_name = lakebase_config.get("endpoint", "primary")
+            self.endpoint_resource_name = f"projects/{project_id}/branches/{branch}/endpoints/{endpoint_name}"
+            
+            if "conn_host" not in lakebase_config or not lakebase_config["conn_host"]:
+                ep = self.workspace_client.postgres.get_endpoint(name=self.endpoint_resource_name)
+                self.host = ep.status.hosts.host
+                logger.info(f"Auto-resolved Autoscaling host: {self.host}")
+            else:
+                self.host = lakebase_config["conn_host"]
+        else:
+            self.host = lakebase_config["conn_host"]
+            self.endpoint_resource_name = None
+
         self.conn_info = f"dbname={self.database} user={self.username} host={self.host} sslmode={self.ssl_mode}"
         
         self._is_initialized = False
-        
-        # Initialize the connection pool with rotating credentials
         self._connection_pool = self._create_rotating_pool()
         print("Connection pool initialised")
         
         logger.info(
-            f"DatabricksStateManager initialized with direct connections "
+            f"DatabricksStateManager initialized ({self.lakebase_type}) "
             f"using standard PostgresSaver tables: {', '.join(self.standard_tables.values())}"
         )
     
@@ -197,8 +215,11 @@ class DatabricksStateManager:
         """Create a connection pool that automatically rotates credentials with caching"""
 
         CredentialConnection.workspace_client = self.workspace_client
-        CredentialConnection.instance_name = self.lakebase_config["instance_name"]
-        # Token cache duration (in minutes, can be overridden via env var)
+        CredentialConnection.lakebase_type = self.lakebase_type
+        if self.lakebase_type == "autoscale":
+            CredentialConnection.endpoint_resource_name = self.endpoint_resource_name
+        else:
+            CredentialConnection.instance_name = self.lakebase_config["instance_name"]
         cache_duration_minutes = int(os.getenv("DB_TOKEN_CACHE_MINUTES", "50"))
         CredentialConnection._cache_duration = cache_duration_minutes * 60
         # Create pool with custom connection class
@@ -228,19 +249,21 @@ class DatabricksStateManager:
         with self._cache_lock:
             current_time = time.time()
             
-            # Check if we have a valid cached credential
             if (self._cached_credential is not None and 
                 self._cache_timestamp is not None and 
                 current_time - self._cache_timestamp < self._cache_duration):
                 return self._cached_credential
             
-            # Generate new credential
-            credential = self.workspace_client.database.generate_database_credential(
-                request_id=str(uuid.uuid4()),
-                instance_names=[self.lakebase_config["instance_name"]]
-            )
+            if self.lakebase_type == "autoscale":
+                credential = self.workspace_client.postgres.generate_database_credential(
+                    endpoint=self.endpoint_resource_name
+                )
+            else:
+                credential = self.workspace_client.database.generate_database_credential(
+                    request_id=str(uuid.uuid4()),
+                    instance_names=[self.lakebase_config["instance_name"]]
+                )
             
-            # Cache the new credential
             self._cached_credential = credential.token
             self._cache_timestamp = current_time
             
@@ -293,13 +316,18 @@ class DatabricksStateManager:
         Returns:
             Dictionary with table information
         """
-        return {
+        info = {
             "standard_tables": self.standard_tables,
-            "database_name": self.lakebase_config.get("conn_db_name", "databricks_postgres"),
-            "host": self.lakebase_config["conn_host"],
-            "instance_name": self.lakebase_config["instance_name"],
+            "database_name": self.database,
+            "host": self.host,
+            "lakebase_type": self.lakebase_type,
             "note": "PostgresSaver uses standard hardcoded table names"
         }
+        if self.lakebase_type == "autoscale":
+            info["endpoint"] = self.endpoint_resource_name
+        else:
+            info["instance_name"] = self.lakebase_config.get("instance_name")
+        return info
     
     def list_tables(self) -> List[str]:
         """
