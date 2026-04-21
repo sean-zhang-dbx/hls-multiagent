@@ -1,0 +1,21 @@
+command: ["uv", "run", "start-app"]
+
+env:
+  - name: MLFLOW_TRACKING_URI
+    value: "databricks"
+  - name: MLFLOW_REGISTRY_URI
+    value: "databricks-uc"
+  - name: API_PROXY
+    value: "http://localhost:8000/invocations"
+  - name: CHAT_APP_PORT
+    value: "3000"
+  - name: CHAT_PROXY_TIMEOUT_SECONDS
+    value: "300"
+  - name: LLM_ENDPOINT_NAME
+    value: "databricks-claude-sonnet-4-6"
+  - name: ZINC_VS_INDEX
+    value: "sean_zhang_catalog.gsk_india_hls.zinc_vs"
+  - name: MLFLOW_EXPERIMENT_ID
+    valueFrom: "experiment"
+  - name: LAKEBASE_AUTOSCALING_ENDPOINT
+    valueFrom: "postgres"

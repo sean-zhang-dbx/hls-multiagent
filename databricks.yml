@@ -1,0 +1,57 @@
+bundle:
+  name: hls_multiagent_v3
+
+resources:
+  apps:
+    hls_multiagent:
+      name: "hls-multiagent-v3"
+      description: "HLS Research Supervisor - LangGraph agent with Lakebase memory and ZINC chemical search"
+      source_code_path: ./
+      config:
+        command: ["uv", "run", "start-app"]
+        env:
+          - name: MLFLOW_TRACKING_URI
+            value: "databricks"
+          - name: MLFLOW_REGISTRY_URI
+            value: "databricks-uc"
+          - name: API_PROXY
+            value: "http://localhost:8000/invocations"
+          - name: CHAT_APP_PORT
+            value: "3000"
+          - name: CHAT_PROXY_TIMEOUT_SECONDS
+            value: "300"
+          - name: LLM_ENDPOINT_NAME
+            value: "databricks-claude-sonnet-4-6"
+          - name: ZINC_VS_INDEX
+            value: "sean_zhang_catalog.gsk_india_hls.zinc_vs"
+          - name: MLFLOW_EXPERIMENT_ID
+            value_from: "experiment"
+          - name: LAKEBASE_AUTOSCALING_ENDPOINT
+            value_from: "postgres"
+          - name: DATABRICKS_EMBEDDING_ENDPOINT
+            value: "databricks-gte-large-en"
+
+      resources:
+        - name: 'experiment'
+          experiment:
+            experiment_id: ""
+            permission: 'CAN_MANAGE'
+        - name: 'postgres'
+          postgres:
+            branch: " "
+            database: " "
+            permission: 'CAN_CONNECT_AND_CREATE'
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://fevm-sean-zhang.cloud.databricks.com
+
+  prod:
+    mode: production
+    resources:
+      apps:
+        hls_multiagent:
+          name: hls-multiagent-v3
