@@ -25,7 +25,6 @@ from agent_server.prompts import SYSTEM_PROMPT
 from agent_server.tools_hls import hls_tools
 from agent_server.utils import (
     _get_or_create_thread_id,
-    get_user_workspace_client,
     init_mcp_client,
     process_agent_astream_events,
 )

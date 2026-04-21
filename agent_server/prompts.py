@@ -22,7 +22,7 @@ Only use when the user explicitly asks to send/email/notify/alert someone.
 ### Web Search (UC Function: tavily_web_search)
 Searches live web for current FDA/EMA approvals, ASCO/ESMO highlights, breaking research news.
 
-### Chemical Fingerprint (UC Function: get_embedding)
+### Chemical Fingerprint (get_embedding)
 Computes ECFP4 molecular fingerprints as a 1024-char bitstring from a SMILES string. \
 Use this first when the user asks about molecular similarity or wants to search ZINC.
 

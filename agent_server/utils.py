@@ -35,7 +35,7 @@ def init_mcp_client(workspace_client: WorkspaceClient) -> DatabricksMultiServerM
     host_name = get_databricks_host_from_env()
     return DatabricksMultiServerMCPClient(
         [
-            # UC functions: clinical alerts, web search, get_embedding
+            # UC functions: clinical alerts, web search
             DatabricksMCPServer(
                 name="uc-functions",
                 url=f"{host_name}/api/2.0/mcp/functions/sean_zhang_catalog/gsk_india_hls",
@@ -53,12 +53,6 @@ def init_mcp_client(workspace_client: WorkspaceClient) -> DatabricksMultiServerM
                 url=f"{host_name}/api/2.0/mcp/genie/01f117bb603f10539cb59a20ea08c344",
                 workspace_client=workspace_client,
             ),
-            # Vector Search: ZINC chemical similarity
-            DatabricksMCPServer(
-                name="zinc-vector-search",
-                url=f"{host_name}/api/2.0/mcp/vector-search/sean_zhang_catalog.gsk_india_hls.zinc_vs",
-                workspace_client=workspace_client,
-            ),
         ]
     )
 
@@ -66,13 +60,19 @@ def get_user_workspace_client() -> WorkspaceClient:
     token = get_request_headers().get("x-forwarded-access-token")
     return WorkspaceClient(token=token, auth_type="pat")
 
-def get_databricks_host_from_env() -> Optional[str]:
+def get_databricks_host_from_env() -> str:
+    host = os.getenv("DATABRICKS_HOST")
+    if host:
+        return host.rstrip("/")
     try:
         w = WorkspaceClient()
-        return w.config.host
+        return w.config.host.rstrip("/")
     except Exception as e:
         logging.exception("Error getting databricks host from env: %s", e)
-        return None
+        raise ValueError(
+            "Cannot determine Databricks host. Set DATABRICKS_HOST or configure "
+            "WorkspaceClient authentication."
+        ) from e
 
 _FAKE_ID_PREFIX = "resp_placeholder_"
 
