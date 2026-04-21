@@ -8,7 +8,7 @@ from databricks.sdk import WorkspaceClient
 from databricks_langchain import ChatDatabricks
 from fastapi import HTTPException
 from langchain.agents import create_agent
-from langchain_core.messages import AnyMessage
+from langchain_core.messages import AnyMessage, BaseMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.graph.message import add_messages
 from langgraph.store.base import BaseStore
@@ -44,6 +44,43 @@ sp_workspace_client = WorkspaceClient()
 LLM_ENDPOINT_NAME = os.getenv("LLM_ENDPOINT_NAME", "databricks-claude-sonnet-4-6")
 LAKEBASE_CONFIG = init_lakebase_config()
 
+
+def _sanitize_tool_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Strip extra fields (like 'id') from ToolMessage content blocks.
+
+    MCP tool results include an 'id' field in text content blocks that Claude's
+    API rejects with 'Extra inputs are not permitted'.
+    """
+    sanitized = []
+    for msg in messages:
+        if isinstance(msg, ToolMessage) and isinstance(msg.content, list):
+            cleaned = []
+            for block in msg.content:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    cleaned.append({"type": "text", "text": block.get("text", "")})
+                elif isinstance(block, dict):
+                    cleaned.append({k: v for k, v in block.items() if k != "id"})
+                else:
+                    cleaned.append(block)
+            sanitized.append(msg.model_copy(update={"content": cleaned}))
+        else:
+            sanitized.append(msg)
+    return sanitized
+
+
+class SanitizedChatDatabricks(ChatDatabricks):
+    """ChatDatabricks wrapper that sanitizes ToolMessage content for Claude compatibility.
+
+    Overrides _prepare_inputs which is the single chokepoint for all API calls
+    (generate, agenerate, stream, astream) to strip extra 'id' fields from
+    MCP tool result content blocks before they reach the API.
+    """
+
+    def _prepare_inputs(self, messages, stop=None, stream=False, **kwargs):
+        return super()._prepare_inputs(
+            _sanitize_tool_messages(messages), stop, stream=stream, **kwargs
+        )
+
 @tool
 def get_current_time() -> str:
     """Get the current date and time."""
@@ -69,7 +106,7 @@ async def init_agent(
     except Exception:
         logger.warning("Failed to fetch MCP tools. Continuing without MCP tools.", exc_info=True)
 
-    model = ChatDatabricks(endpoint=LLM_ENDPOINT_NAME)
+    model = SanitizedChatDatabricks(endpoint=LLM_ENDPOINT_NAME)
 
     return create_agent(
         model=model,
