@@ -1,26 +1,31 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC # Vaccine Supply Chain - Data Generation
+# MAGIC
+# MAGIC Generates 6 Delta tables + seeds Lakebase Autoscaling (PostgreSQL) with
+# MAGIC orders/stores/products for the demand-forecasting notebook.
+# MAGIC
+# MAGIC **Target catalog:** `sean_zhang_catalog.gsk_vaccine_sc_v2`
+# MAGIC **Lakebase project:** `projects/gsk-vaccine-sc` (Autoscaling, PG 17)
+
+# COMMAND ----------
+
+# MAGIC %pip install -U "databricks-sdk>=0.81.0" "psycopg[binary]>=3.0"
+# MAGIC %restart_python
+
+# COMMAND ----------
+
 # MAGIC %sql
-# MAGIC USE catalog users;
-# MAGIC USE SCHEMA sean_zhang;
+# MAGIC USE CATALOG sean_zhang_catalog;
+# MAGIC USE SCHEMA gsk_vaccine_sc_v2;
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- ==============================================================================
-# MAGIC -- SIMPLIFIED VACCINE SUPPLY CHAIN - 6 TABLES ONLY
-# MAGIC -- ==============================================================================
-# MAGIC
-# MAGIC -- Create database
-# MAGIC -- CREATE DATABASE IF NOT EXISTS vaccine_supply_simplified
-# MAGIC -- COMMENT 'Simplified vaccine supply chain for Genie demo (2 rooms)';
-# MAGIC
-# MAGIC -- USE vaccine_supply_simplified;
-# MAGIC
-# MAGIC -- ==============================================================================
 # MAGIC -- GENIE ROOM 1: MANUFACTURING & LOGISTICS (3 Tables)
 # MAGIC -- ==============================================================================
 # MAGIC
-# MAGIC -- TABLE 1: Combined production + shipment data
 # MAGIC CREATE TABLE IF NOT EXISTS fact_production_shipment (
 # MAGIC   record_id STRING NOT NULL,
 # MAGIC   product STRING NOT NULL,
@@ -37,10 +42,9 @@
 # MAGIC   otif_flag INT COMMENT '1=on-time, 0=late'
 # MAGIC )
 # MAGIC USING DELTA
-# MAGIC COMMENT 'Combined manufacturing and logistics metrics in one table'
+# MAGIC COMMENT 'Combined manufacturing and logistics metrics'
 # MAGIC TBLPROPERTIES ('delta.dataSkippingNumIndexedCols' = '3');
 # MAGIC
-# MAGIC -- TABLE 2: Current inventory status
 # MAGIC CREATE TABLE IF NOT EXISTS fact_current_inventory (
 # MAGIC   inventory_id STRING NOT NULL,
 # MAGIC   product STRING NOT NULL,
@@ -54,7 +58,6 @@
 # MAGIC COMMENT 'Current inventory snapshot by product and site'
 # MAGIC TBLPROPERTIES ('delta.dataSkippingNumIndexedCols' = '2');
 # MAGIC
-# MAGIC -- TABLE 3: Pre-aggregated KPIs for Genie Room 1
 # MAGIC CREATE TABLE IF NOT EXISTS genie_room1_kpi (
 # MAGIC   product STRING NOT NULL,
 # MAGIC   site STRING NOT NULL,
@@ -75,7 +78,6 @@
 # MAGIC -- GENIE ROOM 2: IMMUNIZATION & PROCUREMENT (2 Tables)
 # MAGIC -- ==============================================================================
 # MAGIC
-# MAGIC -- TABLE 4: Combined country supply data (procurement + availability)
 # MAGIC CREATE TABLE IF NOT EXISTS fact_country_supply (
 # MAGIC   supply_id STRING NOT NULL,
 # MAGIC   country_code STRING NOT NULL,
@@ -96,20 +98,19 @@
 # MAGIC COMMENT 'Combined procurement and availability metrics by country'
 # MAGIC TBLPROPERTIES ('delta.dataSkippingNumIndexedCols' = '4');
 # MAGIC
-# MAGIC -- TABLE 5: Pre-aggregated country KPIs for Genie Room 2
 # MAGIC CREATE TABLE IF NOT EXISTS genie_room2_kpi (
 # MAGIC   country_name STRING NOT NULL,
 # MAGIC   country_code STRING NOT NULL,
 # MAGIC   income_level STRING NOT NULL,
 # MAGIC   antigen STRING NOT NULL,
-# MAGIC   avg_price_per_dose DOUBLE COMMENT 'Average vaccine price',
-# MAGIC   avg_coverage_pct DOUBLE COMMENT 'Average immunization coverage',
-# MAGIC   target_coverage_pct DOUBLE COMMENT 'Target coverage goal',
-# MAGIC   coverage_gap_pct DOUBLE COMMENT 'Target - actual coverage',
-# MAGIC   vaccine_availability_pct DOUBLE COMMENT 'Days available / 365',
-# MAGIC   stockout_count INT COMMENT 'Number of stockout events',
-# MAGIC   avg_stockout_days DOUBLE COMMENT 'Average days out of stock',
-# MAGIC   supplier_count INT COMMENT 'Number of suppliers',
+# MAGIC   avg_price_per_dose DOUBLE,
+# MAGIC   avg_coverage_pct DOUBLE,
+# MAGIC   target_coverage_pct DOUBLE,
+# MAGIC   coverage_gap_pct DOUBLE,
+# MAGIC   vaccine_availability_pct DOUBLE,
+# MAGIC   stockout_count BIGINT,
+# MAGIC   avg_stockout_days DOUBLE,
+# MAGIC   supplier_count BIGINT,
 # MAGIC   kpi_date DATE NOT NULL
 # MAGIC )
 # MAGIC USING DELTA
@@ -120,7 +121,6 @@
 # MAGIC -- INTEGRATION TABLE (for Agent Orchestrator)
 # MAGIC -- ==============================================================================
 # MAGIC
-# MAGIC -- TABLE 6: Cross-domain risk assessment
 # MAGIC CREATE TABLE IF NOT EXISTS integrated_risk_view (
 # MAGIC   product STRING,
 # MAGIC   site STRING,
@@ -137,158 +137,78 @@
 # MAGIC USING DELTA
 # MAGIC COMMENT 'Integrated view joining manufacturing and immunization domains'
 # MAGIC TBLPROPERTIES ('delta.dataSkippingNumIndexedCols' = '4');
-# MAGIC
-# MAGIC -- ==============================================================================
-# MAGIC -- GENIE ROOM 1: Pre-built Views for Queries
-# MAGIC -- ==============================================================================
-# MAGIC
-# MAGIC CREATE OR REPLACE VIEW v_manufacturing_status AS
-# MAGIC SELECT 
-# MAGIC   product,
-# MAGIC   site,
-# MAGIC   avg_yield_pct,
-# MAGIC   otif_pct,
-# MAGIC   avg_lead_time_days,
-# MAGIC   excursion_rate_pct,
-# MAGIC   CASE 
-# MAGIC     WHEN avg_yield_pct >= 96 THEN 'EXCELLENT'
-# MAGIC     WHEN avg_yield_pct >= 94 THEN 'GOOD'
-# MAGIC     WHEN avg_yield_pct >= 92 THEN 'ACCEPTABLE'
-# MAGIC     ELSE 'NEEDS_ATTENTION'
-# MAGIC   END as yield_status,
-# MAGIC   CASE 
-# MAGIC     WHEN otif_pct >= 95 THEN 'ON_TRACK'
-# MAGIC     WHEN otif_pct >= 90 THEN 'ACCEPTABLE'
-# MAGIC     ELSE 'AT_RISK'
-# MAGIC   END as otif_status
-# MAGIC FROM genie_room1_kpi
-# MAGIC ORDER BY avg_yield_pct DESC;
-# MAGIC
-# MAGIC CREATE OR REPLACE VIEW v_inventory_health AS
-# MAGIC SELECT 
-# MAGIC   product,
-# MAGIC   site,
-# MAGIC   avg_days_of_supply,
-# MAGIC   stockout_risk_pct,
-# MAGIC   CASE 
-# MAGIC     WHEN avg_days_of_supply = 0 THEN 'OUT_OF_STOCK'
-# MAGIC     WHEN avg_days_of_supply < 5 THEN 'CRITICAL'
-# MAGIC     WHEN avg_days_of_supply < 15 THEN 'LOW'
-# MAGIC     ELSE 'HEALTHY'
-# MAGIC   END as inventory_status
-# MAGIC FROM genie_room1_kpi
-# MAGIC ORDER BY avg_days_of_supply ASC;
-# MAGIC
-# MAGIC CREATE OR REPLACE VIEW v_logistics_performance AS
-# MAGIC SELECT 
-# MAGIC   product,
-# MAGIC   site,
-# MAGIC   otif_pct,
-# MAGIC   avg_lead_time_days,
-# MAGIC   excursion_rate_pct,
-# MAGIC   CASE 
-# MAGIC     WHEN otif_pct >= 95 AND excursion_rate_pct < 1 THEN 'EXCELLENT'
-# MAGIC     WHEN otif_pct >= 90 AND excursion_rate_pct < 2 THEN 'GOOD'
-# MAGIC     ELSE 'NEEDS_ATTENTION'
-# MAGIC   END as logistics_grade
-# MAGIC FROM genie_room1_kpi
-# MAGIC ORDER BY otif_pct DESC;
-# MAGIC
-# MAGIC -- ==============================================================================
-# MAGIC -- GENIE ROOM 2: Pre-built Views for Queries
-# MAGIC -- ==============================================================================
-# MAGIC
-# MAGIC CREATE OR REPLACE VIEW v_country_coverage AS
-# MAGIC SELECT 
-# MAGIC   country_name,
-# MAGIC   country_code,
-# MAGIC   income_level,
-# MAGIC   antigen,
-# MAGIC   avg_coverage_pct,
-# MAGIC   target_coverage_pct,
-# MAGIC   coverage_gap_pct,
-# MAGIC   CASE 
-# MAGIC     WHEN coverage_gap_pct <= -5 THEN 'EXCEEDING_TARGET'
-# MAGIC     WHEN coverage_gap_pct >= 5 THEN 'BELOW_TARGET'
-# MAGIC     ELSE 'ON_TARGET'
-# MAGIC   END as coverage_status,
-# MAGIC   CASE 
-# MAGIC     WHEN coverage_gap_pct > 10 THEN 'CRITICAL'
-# MAGIC     WHEN coverage_gap_pct > 5 THEN 'WARNING'
-# MAGIC     ELSE 'ACCEPTABLE'
-# MAGIC   END as gap_severity
-# MAGIC FROM genie_room2_kpi
-# MAGIC ORDER BY coverage_gap_pct DESC;
-# MAGIC
-# MAGIC CREATE OR REPLACE VIEW v_vaccine_availability AS
-# MAGIC SELECT 
-# MAGIC   country_name,
-# MAGIC   country_code,
-# MAGIC   income_level,
-# MAGIC   antigen,
-# MAGIC   vaccine_availability_pct,
-# MAGIC   avg_stockout_days,
-# MAGIC   stockout_count,
-# MAGIC   CASE 
-# MAGIC     WHEN vaccine_availability_pct >= 95 THEN 'RELIABLE'
-# MAGIC     WHEN vaccine_availability_pct >= 90 THEN 'ACCEPTABLE'
-# MAGIC     WHEN vaccine_availability_pct >= 80 THEN 'AT_RISK'
-# MAGIC     ELSE 'CRITICAL'
-# MAGIC   END as availability_status
-# MAGIC FROM genie_room2_kpi
-# MAGIC ORDER BY vaccine_availability_pct ASC;
-# MAGIC
-# MAGIC CREATE OR REPLACE VIEW v_pricing_analysis AS
-# MAGIC SELECT 
-# MAGIC   country_name,
-# MAGIC   income_level,
-# MAGIC   antigen,
-# MAGIC   ROUND(avg_price_per_dose, 2) as price_per_dose,
-# MAGIC   supplier_count,
-# MAGIC   CASE 
-# MAGIC     WHEN income_level = 'HIC' AND avg_price_per_dose > 15 THEN 'PREMIUM'
-# MAGIC     WHEN income_level IN ('UMIC', 'LMIC') AND avg_price_per_dose < 5 THEN 'AFFORDABLE'
-# MAGIC     WHEN income_level = 'LIC' AND avg_price_per_dose < 3 THEN 'AFFORDABLE'
-# MAGIC     ELSE 'MODERATE'
-# MAGIC   END as price_tier
-# MAGIC FROM genie_room2_kpi
-# MAGIC ORDER BY avg_price_per_dose DESC;
-# MAGIC
-# MAGIC -- ==============================================================================
-# MAGIC -- SAMPLE QUERIES FOR EACH GENIE ROOM (comments only)
-# MAGIC -- ==============================================================================
-# MAGIC
-# MAGIC -- GENIE ROOM 1:
-# MAGIC -- SELECT * FROM v_manufacturing_status WHERE yield_status = 'NEEDS_ATTENTION';
-# MAGIC -- SELECT * FROM v_inventory_health WHERE inventory_status IN ('OUT_OF_STOCK', 'CRITICAL');
-# MAGIC -- SELECT * FROM v_logistics_performance WHERE logistics_grade != 'EXCELLENT';
-# MAGIC
-# MAGIC -- GENIE ROOM 2:
-# MAGIC -- SELECT * FROM v_country_coverage WHERE gap_severity IN ('CRITICAL', 'WARNING');
-# MAGIC -- SELECT * FROM v_vaccine_availability WHERE availability_status != 'RELIABLE';
-# MAGIC -- SELECT * FROM v_pricing_analysis WHERE price_tier = 'PREMIUM' AND income_level = 'LIC';
-# MAGIC
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE TABLE IF NOT EXISTS users.sean_zhang.genie_room2_kpi (
-# MAGIC   country_name STRING NOT NULL,
-# MAGIC   country_code STRING NOT NULL,
-# MAGIC   income_level STRING NOT NULL,
-# MAGIC   antigen STRING NOT NULL,
-# MAGIC   avg_price_per_dose DOUBLE,
-# MAGIC   avg_coverage_pct DOUBLE,
-# MAGIC   target_coverage_pct DOUBLE,
-# MAGIC   coverage_gap_pct DOUBLE,
-# MAGIC   vaccine_availability_pct DOUBLE,
-# MAGIC   stockout_count BIGINT,
-# MAGIC   avg_stockout_days DOUBLE,
-# MAGIC   supplier_count BIGINT,
-# MAGIC   kpi_date DATE NOT NULL
-# MAGIC )
-# MAGIC USING DELTA;
+# MAGIC -- ==============================================================================
+# MAGIC -- GENIE ROOM 1: Pre-built Views
+# MAGIC -- ==============================================================================
 # MAGIC
+# MAGIC CREATE OR REPLACE VIEW v_manufacturing_status AS
+# MAGIC SELECT
+# MAGIC   product, site, avg_yield_pct, otif_pct, avg_lead_time_days, excursion_rate_pct,
+# MAGIC   CASE WHEN avg_yield_pct >= 96 THEN 'EXCELLENT'
+# MAGIC        WHEN avg_yield_pct >= 94 THEN 'GOOD'
+# MAGIC        WHEN avg_yield_pct >= 92 THEN 'ACCEPTABLE'
+# MAGIC        ELSE 'NEEDS_ATTENTION' END as yield_status,
+# MAGIC   CASE WHEN otif_pct >= 95 THEN 'ON_TRACK'
+# MAGIC        WHEN otif_pct >= 90 THEN 'ACCEPTABLE'
+# MAGIC        ELSE 'AT_RISK' END as otif_status
+# MAGIC FROM genie_room1_kpi ORDER BY avg_yield_pct DESC;
+# MAGIC
+# MAGIC CREATE OR REPLACE VIEW v_inventory_health AS
+# MAGIC SELECT
+# MAGIC   product, site, avg_days_of_supply, stockout_risk_pct,
+# MAGIC   CASE WHEN avg_days_of_supply = 0 THEN 'OUT_OF_STOCK'
+# MAGIC        WHEN avg_days_of_supply < 5 THEN 'CRITICAL'
+# MAGIC        WHEN avg_days_of_supply < 15 THEN 'LOW'
+# MAGIC        ELSE 'HEALTHY' END as inventory_status
+# MAGIC FROM genie_room1_kpi ORDER BY avg_days_of_supply ASC;
+# MAGIC
+# MAGIC CREATE OR REPLACE VIEW v_logistics_performance AS
+# MAGIC SELECT
+# MAGIC   product, site, otif_pct, avg_lead_time_days, excursion_rate_pct,
+# MAGIC   CASE WHEN otif_pct >= 95 AND excursion_rate_pct < 1 THEN 'EXCELLENT'
+# MAGIC        WHEN otif_pct >= 90 AND excursion_rate_pct < 2 THEN 'GOOD'
+# MAGIC        ELSE 'NEEDS_ATTENTION' END as logistics_grade
+# MAGIC FROM genie_room1_kpi ORDER BY otif_pct DESC;
+# MAGIC
+# MAGIC -- ==============================================================================
+# MAGIC -- GENIE ROOM 2: Pre-built Views
+# MAGIC -- ==============================================================================
+# MAGIC
+# MAGIC CREATE OR REPLACE VIEW v_country_coverage AS
+# MAGIC SELECT
+# MAGIC   country_name, country_code, income_level, antigen,
+# MAGIC   avg_coverage_pct, target_coverage_pct, coverage_gap_pct,
+# MAGIC   CASE WHEN coverage_gap_pct <= -5 THEN 'EXCEEDING_TARGET'
+# MAGIC        WHEN coverage_gap_pct >= 5 THEN 'BELOW_TARGET'
+# MAGIC        ELSE 'ON_TARGET' END as coverage_status,
+# MAGIC   CASE WHEN coverage_gap_pct > 10 THEN 'CRITICAL'
+# MAGIC        WHEN coverage_gap_pct > 5 THEN 'WARNING'
+# MAGIC        ELSE 'ACCEPTABLE' END as gap_severity
+# MAGIC FROM genie_room2_kpi ORDER BY coverage_gap_pct DESC;
+# MAGIC
+# MAGIC CREATE OR REPLACE VIEW v_vaccine_availability AS
+# MAGIC SELECT
+# MAGIC   country_name, country_code, income_level, antigen,
+# MAGIC   vaccine_availability_pct, avg_stockout_days, stockout_count,
+# MAGIC   CASE WHEN vaccine_availability_pct >= 95 THEN 'RELIABLE'
+# MAGIC        WHEN vaccine_availability_pct >= 90 THEN 'ACCEPTABLE'
+# MAGIC        WHEN vaccine_availability_pct >= 80 THEN 'AT_RISK'
+# MAGIC        ELSE 'CRITICAL' END as availability_status
+# MAGIC FROM genie_room2_kpi ORDER BY vaccine_availability_pct ASC;
+# MAGIC
+# MAGIC CREATE OR REPLACE VIEW v_pricing_analysis AS
+# MAGIC SELECT
+# MAGIC   country_name, income_level, antigen,
+# MAGIC   ROUND(avg_price_per_dose, 2) as price_per_dose, supplier_count,
+# MAGIC   CASE WHEN income_level = 'HIC' AND avg_price_per_dose > 15 THEN 'PREMIUM'
+# MAGIC        WHEN income_level IN ('UMIC', 'LMIC') AND avg_price_per_dose < 5 THEN 'AFFORDABLE'
+# MAGIC        WHEN income_level = 'LIC' AND avg_price_per_dose < 3 THEN 'AFFORDABLE'
+# MAGIC        ELSE 'MODERATE' END as price_tier
+# MAGIC FROM genie_room2_kpi ORDER BY avg_price_per_dose DESC;
 
 # COMMAND ----------
 
@@ -302,10 +222,12 @@ import pyspark.sql.functions as f
 
 spark = SparkSession.builder.getOrCreate()
 
-USER_SCHEMA_PREFIX = "users.sean_zhang"  # change if needed
+CATALOG = "sean_zhang_catalog"
+SCHEMA = "gsk_vaccine_sc_v2"
+TABLE_PREFIX = f"{CATALOG}.{SCHEMA}"
 
 # =============================================================================
-# SCHEMAS (match DDL below)
+# SCHEMAS
 # =============================================================================
 
 schema_fact_production_shipment = StructType([
@@ -350,8 +272,6 @@ schema_fact_country_supply = StructType([
     StructField("stockout_days", IntegerType(), False),
     StructField("vaccine_availability_pct", DoubleType(), False),
 ])
-
-# For KPIs we’ll rely on Spark schema derivation but cast critical fields below.
 
 # =============================================================================
 # PANDAS BUILDERS
@@ -486,23 +406,22 @@ def build_pdf_fact_country_supply(num_records=500) -> pd.DataFrame:
 # =============================================================================
 
 def write_df(df, table_name: str, mode: str = "overwrite", overwrite_schema: bool = True):
-    full_name = f"{USER_SCHEMA_PREFIX}.{table_name}"
+    full_name = f"{TABLE_PREFIX}.{table_name}"
     writer = df.write.format("delta").mode(mode)
     if overwrite_schema:
         writer = writer.option("overwriteSchema", "true")
     writer.saveAsTable(full_name)
-    print(f"✓ wrote {full_name} ({df.count()} rows)")
+    print(f"  wrote {full_name} ({df.count()} rows)")
 
 # =============================================================================
-# MAIN
+# MAIN: Generate Delta tables
 # =============================================================================
 
 def main():
     print("=" * 80)
-    print("Building pandas DataFrames → spark DataFrames → users.sean_zhang.*")
+    print(f"Building supply chain tables -> {TABLE_PREFIX}.*")
     print("=" * 80)
 
-    # Optional: drop existing tables to avoid legacy schema conflicts
     for t in [
         "fact_production_shipment",
         "fact_current_inventory",
@@ -511,19 +430,17 @@ def main():
         "genie_room2_kpi",
         "integrated_risk_view",
     ]:
-        spark.sql(f"DROP TABLE IF EXISTS {USER_SCHEMA_PREFIX}.{t}")
+        spark.sql(f"DROP TABLE IF EXISTS {TABLE_PREFIX}.{t}")
 
-    # 1) Build pandas DataFrames
     pdf_prod_ship = build_pdf_fact_production_shipment()
     pdf_inventory = build_pdf_fact_current_inventory()
     pdf_country_supply = build_pdf_fact_country_supply()
 
-    # 2) Convert to Spark with explicit schemas
     df_prod_ship = spark.createDataFrame(pdf_prod_ship, schema_fact_production_shipment)
     df_inventory = spark.createDataFrame(pdf_inventory, schema_fact_current_inventory)
     df_country_supply = spark.createDataFrame(pdf_country_supply, schema_fact_country_supply)
 
-    # 3) Room 1 KPIs
+    # Room 1 KPIs
     df_room1_kpi = (
         df_prod_ship.groupBy("product", "site")
         .agg(
@@ -552,79 +469,186 @@ def main():
         .withColumn("kpi_date", f.current_date())
     )
 
-    # 4) Room 2 KPIs
-    df_room2_kpi_raw = (
+    # Room 2 KPIs
+    df_room2_kpi = (
         df_country_supply.groupBy("country_name", "country_code", "income_level", "antigen")
         .agg(
             f.round(f.avg("price_per_dose"), 2).alias("avg_price_per_dose"),
             f.round(f.avg("actual_coverage_pct"), 1).alias("avg_coverage_pct"),
             f.round(f.avg("target_coverage_pct"), 1).alias("target_coverage_pct"),
             f.round(f.avg("vaccine_availability_pct"), 1).alias("vaccine_availability_pct"),
-            f.sum(f.when(f.col("has_stockout") == True, 1).otherwise(0)).alias("stockout_count"),
+            f.sum(f.when(f.col("has_stockout") == True, 1).otherwise(0)).cast("bigint").alias("stockout_count"),
             f.round(f.avg("stockout_days"), 0).alias("avg_stockout_days"),
-            f.countDistinct("supplier").alias("supplier_count"),
+            f.countDistinct("supplier").cast("bigint").alias("supplier_count"),
         )
-        .withColumn(
-            "coverage_gap_pct",
-            f.col("target_coverage_pct") - f.col("avg_coverage_pct"),
-        )
+        .withColumn("coverage_gap_pct", f.col("target_coverage_pct") - f.col("avg_coverage_pct"))
         .withColumn("kpi_date", f.current_date())
     )
 
-    # Explicitly cast count-like fields to LONG / BIGINT to be stable
-    df_room2_kpi = (
-        df_room2_kpi_raw
-        .withColumn("stockout_count", f.col("stockout_count").cast("bigint"))
-        .withColumn("supplier_count", f.col("supplier_count").cast("bigint"))
-    )
-
-    # 5) Write base tables
     write_df(df_prod_ship, "fact_production_shipment")
     write_df(df_inventory, "fact_current_inventory")
     write_df(df_room1_kpi, "genie_room1_kpi")
     write_df(df_country_supply, "fact_country_supply")
     write_df(df_room2_kpi, "genie_room2_kpi")
 
-    # 6) Integrated risk view (cross-domain)
+    # Integrated risk view (cross-domain join)
     integrated = spark.sql(f"""
-        SELECT 
-            r1.product,
-            r1.site,
-            r1.otif_pct,
-            r1.avg_yield_pct,
-            r1.avg_days_of_supply,
-            r2.country_name,
-            r2.antigen,
+        SELECT
+            r1.product, r1.site, r1.otif_pct, r1.avg_yield_pct, r1.avg_days_of_supply,
+            r2.country_name, r2.antigen,
             r2.avg_coverage_pct AS actual_coverage_pct,
             r2.vaccine_availability_pct,
-            CASE 
-                WHEN r2.avg_coverage_pct < r2.target_coverage_pct - 10 
-                     AND r1.avg_days_of_supply < 10
-                THEN 'HIGH_RISK'
-                WHEN r2.avg_coverage_pct < r2.target_coverage_pct - 5 
-                     OR r1.avg_days_of_supply < 5
-                THEN 'MEDIUM_RISK'
+            CASE
+                WHEN r2.avg_coverage_pct < r2.target_coverage_pct - 10
+                     AND r1.avg_days_of_supply < 10 THEN 'HIGH_RISK'
+                WHEN r2.avg_coverage_pct < r2.target_coverage_pct - 5
+                     OR r1.avg_days_of_supply < 5 THEN 'MEDIUM_RISK'
                 ELSE 'LOW_RISK'
             END as risk_status,
             CURRENT_DATE() as integration_date
-        FROM {USER_SCHEMA_PREFIX}.genie_room1_kpi r1
-        CROSS JOIN {USER_SCHEMA_PREFIX}.genie_room2_kpi r2
+        FROM {TABLE_PREFIX}.genie_room1_kpi r1
+        CROSS JOIN {TABLE_PREFIX}.genie_room2_kpi r2
         WHERE r1.product LIKE CONCAT('%', r2.antigen, '%')
            OR r1.product = r2.antigen
         LIMIT 100
     """)
     write_df(integrated, "integrated_risk_view")
 
-    print("\nDone. Tables created under users.sean_zhang:")
+    print(f"\nDelta tables created under {TABLE_PREFIX}:")
     for t in [
-        "fact_production_shipment",
-        "fact_current_inventory",
-        "genie_room1_kpi",
-        "fact_country_supply",
-        "genie_room2_kpi",
-        "integrated_risk_view",
+        "fact_production_shipment", "fact_current_inventory", "genie_room1_kpi",
+        "fact_country_supply", "genie_room2_kpi", "integrated_risk_view",
     ]:
-        print(f"  - {USER_SCHEMA_PREFIX}.{t}")
+        print(f"  - {TABLE_PREFIX}.{t}")
 
-if __name__ == "__main__":
-    main()
+main()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Seed Lakebase Autoscaling with orders/stores/products
+# MAGIC
+# MAGIC Creates tables in the `gsk-vaccine-sc` Lakebase Autoscaling project that the
+# MAGIC `analyze_data_lakebase` notebook reads for demand forecasting.
+
+# COMMAND ----------
+
+import psycopg
+from databricks.sdk import WorkspaceClient
+
+PROJECT_ID = "gsk-vaccine-sc"
+BRANCH = "production"
+ENDPOINT_NAME = f"projects/{PROJECT_ID}/branches/{BRANCH}/endpoints/primary"
+
+w = WorkspaceClient()
+
+endpoint = w.postgres.get_endpoint(name=ENDPOINT_NAME)
+host = endpoint.status.hosts.host
+cred = w.postgres.generate_database_credential(endpoint=ENDPOINT_NAME)
+username = w.current_user.me().user_name
+
+conn_string = (
+    f"host={host} "
+    f"dbname=databricks_postgres "
+    f"user={username} "
+    f"password={cred.token} "
+    f"sslmode=require"
+)
+
+print(f"Connecting to Lakebase Autoscaling: {host}")
+
+with psycopg.connect(conn_string) as conn:
+    with conn.cursor() as cur:
+        cur.execute("SELECT version()")
+        print(f"Connected: {cur.fetchone()[0]}")
+
+        # Create tables
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS products (
+                product_id SERIAL PRIMARY KEY,
+                product_name TEXT NOT NULL,
+                category TEXT,
+                unit_price NUMERIC(10,2) NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS stores (
+                store_id SERIAL PRIMARY KEY,
+                store_name TEXT NOT NULL,
+                region TEXT,
+                country TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS orders (
+                order_id SERIAL PRIMARY KEY,
+                product_id INT REFERENCES products(product_id),
+                to_store_id INT REFERENCES stores(store_id),
+                order_date DATE NOT NULL,
+                quantity_cases INT NOT NULL
+            )
+        """)
+        conn.commit()
+
+        # Seed products
+        cur.execute("SELECT COUNT(*) FROM products")
+        if cur.fetchone()[0] == 0:
+            products = [
+                ("PCV13 Vaccine", "Pneumococcal", 45.00),
+                ("HPV9 Vaccine", "HPV", 65.00),
+                ("DTP3 Vaccine", "Combined", 12.50),
+                ("Influenza Vaccine", "Seasonal", 18.75),
+                ("Rotavirus Vaccine", "Rotavirus", 22.00),
+            ]
+            cur.executemany(
+                "INSERT INTO products (product_name, category, unit_price) VALUES (%s, %s, %s)",
+                products,
+            )
+
+        # Seed stores
+        cur.execute("SELECT COUNT(*) FROM stores")
+        if cur.fetchone()[0] == 0:
+            stores = [
+                ("NHS Central", "Europe", "UK"),
+                ("Nigeria Federal MOH", "Africa", "Nigeria"),
+                ("India National MOH", "Asia", "India"),
+                ("Brazil SUS", "Americas", "Brazil"),
+                ("Kenya MOH", "Africa", "Kenya"),
+                ("France Sante", "Europe", "France"),
+                ("Indonesia MOH", "Asia", "Indonesia"),
+                ("South Africa DOH", "Africa", "South Africa"),
+            ]
+            cur.executemany(
+                "INSERT INTO stores (store_name, region, country) VALUES (%s, %s, %s)",
+                stores,
+            )
+
+        # Seed orders (90 days of synthetic data)
+        cur.execute("SELECT COUNT(*) FROM orders")
+        if cur.fetchone()[0] == 0:
+            from datetime import date, timedelta as td
+            import random as rng
+
+            base = date(2025, 12, 1)
+            order_rows = []
+            for day_offset in range(90):
+                order_date = base + td(days=day_offset)
+                n_orders = rng.randint(3, 12)
+                for _ in range(n_orders):
+                    order_rows.append((
+                        rng.randint(1, 5),
+                        rng.randint(1, 8),
+                        order_date,
+                        rng.randint(10, 500),
+                    ))
+            cur.executemany(
+                "INSERT INTO orders (product_id, to_store_id, order_date, quantity_cases) VALUES (%s, %s, %s, %s)",
+                order_rows,
+            )
+
+        conn.commit()
+
+        cur.execute("SELECT COUNT(*) FROM orders")
+        print(f"Lakebase seeded: {cur.fetchone()[0]} orders")
+
+print("Done - Lakebase Autoscaling tables ready.")
