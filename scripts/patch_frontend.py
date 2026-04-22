@@ -13,12 +13,12 @@ function ResourceLinks() {
   const links = [
     {
       label: "Genie: Cancer Incidence",
-      href: "WORKSPACE_URL/explore/genie/01f117bb5fff15c58a5541490e9d6660",
+      href: "WORKSPACE_URL/genie/rooms/01f117bb5fff15c58a5541490e9d6660",
       icon: "🔬",
     },
     {
       label: "Genie: Clinical Trials",
-      href: "WORKSPACE_URL/explore/genie/01f117bb603f10539cb59a20ea08c344",
+      href: "WORKSPACE_URL/genie/rooms/01f117bb603f10539cb59a20ea08c344",
       icon: "💊",
     },
     {
@@ -33,17 +33,17 @@ function ResourceLinks() {
     },
     {
       label: "Lakebase Memory",
-      href: "WORKSPACE_URL/sql/databases/projects/hls-agent-v3",
+      href: "WORKSPACE_URL/lakebase/projects/3d438ae3-84ba-4965-b92a-7ef27ccfae97",
       icon: "🧠",
     },
     {
       label: "UC: Clinical Alert",
-      href: "WORKSPACE_URL/explore/data/sean_zhang_catalog/gsk_india_hls/functions/send_clinical_alert",
+      href: "WORKSPACE_URL/explore/data/functions/sean_zhang_catalog/gsk_india_hls/send_clinical_alert?o=7474654216647582",
       icon: "🚨",
     },
     {
       label: "UC: Web Search",
-      href: "WORKSPACE_URL/explore/data/sean_zhang_catalog/gsk_india_hls/functions/tavily_web_search",
+      href: "WORKSPACE_URL/explore/data/functions/sean_zhang_catalog/gsk_india_hls/tavily_web_search?o=7474654216647582",
       icon: "🌐",
     },
   ];
