@@ -47,7 +47,10 @@ _original_lifespan = app.router.lifespan_context
 
 @asynccontextmanager
 async def _lifespan(app):
-    await run_lakebase_setup(LAKEBASE_CONFIG)
+    try:
+        await run_lakebase_setup(LAKEBASE_CONFIG)
+    except Exception as exc:
+        logger.warning("Lakebase setup failed (memory features may be degraded): %s", exc)
     try:
         async with _original_lifespan(app):
             yield
