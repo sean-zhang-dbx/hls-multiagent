@@ -38,7 +38,10 @@ agent_server = AgentServer(
 )
 
 app = agent_server.app  # noqa: F841
-setup_mlflow_git_based_version_tracking()
+try:
+    setup_mlflow_git_based_version_tracking()
+except Exception as exc:
+    logger.warning("MLflow git version tracking unavailable (expected in App deployment): %s", exc)
 
 _original_lifespan = app.router.lifespan_context
 
