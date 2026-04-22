@@ -102,9 +102,13 @@ async def init_agent(
 
     mcp_client = init_mcp_client(ws)
     try:
-        tools.extend(await mcp_client.get_tools())
-    except Exception:
-        logger.warning("Failed to fetch MCP tools. Continuing without MCP tools.", exc_info=True)
+        mcp_tools = await mcp_client.get_tools()
+        tools.extend(mcp_tools)
+        logger.info("Loaded %d MCP tools: %s", len(mcp_tools), [t.name for t in mcp_tools])
+    except Exception as e:
+        logger.error("Failed to fetch MCP tools: %s", e, exc_info=True)
+        _mcp_error_detail = f"{type(e).__name__}: {e}"
+        logger.error("MCP error detail: %s", _mcp_error_detail)
 
     model = SanitizedChatDatabricks(endpoint=LLM_ENDPOINT_NAME)
 

@@ -63,7 +63,10 @@ def get_user_workspace_client() -> WorkspaceClient:
 def get_databricks_host_from_env() -> str:
     host = os.getenv("DATABRICKS_HOST")
     if host:
-        return host.rstrip("/")
+        host = host.rstrip("/")
+        if not host.startswith("https://") and not host.startswith("http://"):
+            host = f"https://{host}"
+        return host
     try:
         w = WorkspaceClient()
         return w.config.host.rstrip("/")
