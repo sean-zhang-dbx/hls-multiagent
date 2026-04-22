@@ -209,6 +209,14 @@ class ProcessManager:
         if self.frontend_log:
             self.frontend_log.close()
 
+    def patch_frontend(self):
+        """Apply HLS-specific customizations to the chat frontend."""
+        try:
+            from scripts.patch_frontend import main as patch_main
+            patch_main()
+        except Exception as e:
+            print(f"WARNING: Frontend patching failed: {e}. Using default UI.")
+
     def run(self, backend_args=None):
         load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env", override=True)
         if not os.environ.get("DATABRICKS_APP_NAME"):
@@ -221,6 +229,7 @@ class ProcessManager:
             else:
                 # Set API_PROXY environment variable for frontend to connect to backend
                 os.environ["API_PROXY"] = f"http://localhost:{self.port}/invocations"
+                self.patch_frontend()
 
         # Open log files
         self.backend_log = open("backend.log", "w", buffering=1)
