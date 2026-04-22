@@ -28,13 +28,24 @@ VS_NUM_RESULTS = 5
 
 _fpgen = AllChem.GetMorganGenerator(radius=2, fpSize=1024)
 _vs_index = None
+_ws_client = None
 
 
 def _get_vs_index():
-    """Lazy-init the Vector Search index object."""
+    """Lazy-init the Vector Search index object using the workspace client for auth."""
     global _vs_index
     if _vs_index is None:
-        client = VectorSearchClient()
+        ws = _ws_client or WorkspaceClient()
+        vs_kwargs = {"workspace_url": ws.config.host}
+        sp_id = os.getenv("DATABRICKS_CLIENT_ID")
+        sp_secret = os.getenv("DATABRICKS_CLIENT_SECRET")
+        pat = os.getenv("DATABRICKS_TOKEN")
+        if sp_id and sp_secret:
+            vs_kwargs["service_principal_client_id"] = sp_id
+            vs_kwargs["service_principal_client_secret"] = sp_secret
+        elif pat:
+            vs_kwargs["personal_access_token"] = pat
+        client = VectorSearchClient(**vs_kwargs)
         _vs_index = client.get_index(
             endpoint_name=VS_ENDPOINT_NAME,
             index_name=VS_INDEX_NAME,
@@ -45,6 +56,9 @@ def _get_vs_index():
 
 def hls_tools(workspace_client: Optional[WorkspaceClient] = None):
     """Return list of HLS-specific tools (fingerprint computation + chemical search)."""
+    global _ws_client
+    if workspace_client:
+        _ws_client = workspace_client
 
     @tool
     def get_embedding(smiles: str) -> str:
