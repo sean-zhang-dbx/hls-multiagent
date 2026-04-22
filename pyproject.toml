@@ -50,3 +50,4 @@ addopts = "-n 7"
 
 [project.scripts]
 start-server = "agent_server.start_server:main"
+start-app = "scripts.start_app:main"
