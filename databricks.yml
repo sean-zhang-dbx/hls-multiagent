@@ -8,39 +8,41 @@ resources:
       description: "HLS Research Supervisor - LangGraph agent with Lakebase memory and ZINC chemical search"
       source_code_path: ./
       config:
-        command: ["uv", "run", "start-app"]
+        command: ["uv", "run", "start-server"]
         env:
           - name: MLFLOW_TRACKING_URI
             value: "databricks"
           - name: MLFLOW_REGISTRY_URI
             value: "databricks-uc"
-          - name: API_PROXY
-            value: "http://localhost:8000/invocations"
-          - name: CHAT_APP_PORT
-            value: "3000"
-          - name: CHAT_PROXY_TIMEOUT_SECONDS
-            value: "300"
           - name: LLM_ENDPOINT_NAME
             value: "databricks-claude-sonnet-4-6"
           - name: ZINC_VS_INDEX
             value: "sean_zhang_catalog.gsk_india_hls.zinc_vs"
-          - name: MLFLOW_EXPERIMENT_ID
-            value_from: "experiment"
-          - name: LAKEBASE_AUTOSCALING_ENDPOINT
-            value_from: "postgres"
+          - name: ZINC_VS_ENDPOINT
+            value: "hls-agent-vs-endpoint"
           - name: DATABRICKS_EMBEDDING_ENDPOINT
             value: "databricks-gte-large-en"
+          - name: TASK_TIMEOUT_SECONDS
+            value: "3600"
+          - name: POLL_INTERVAL_SECONDS
+            value: "1"
+          - name: MLFLOW_EXPERIMENT_ID
+            value_from: "experiment"
+          - name: LAKEBASE_AUTOSCALING_PROJECT
+            value: "hls-agent-v3"
+          - name: LAKEBASE_AUTOSCALING_BRANCH
+            value: "production"
 
       resources:
-        - name: 'experiment'
+        - name: "experiment"
           experiment:
-            experiment_id: ""
-            permission: 'CAN_MANAGE'
-        - name: 'postgres'
+            experiment_id: "2778446027764261"
+            permission: "CAN_MANAGE"
+        - name: "lakebase"
           postgres:
-            branch: " "
-            database: " "
-            permission: 'CAN_CONNECT_AND_CREATE'
+            project: "hls-agent-v3"
+            branch: "production"
+            permission: "CAN_CONNECT_AND_CREATE"
 
 targets:
   dev:
